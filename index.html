@@ -5,29 +5,43 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Roast Chess</title>
 <style>
-:root{--bg:#14161a;--fg:#eee;--card:#1f2228;--l:#f0d9b5;--d:#b58863;--acc:#e5484d}
+:root{--bg:#14161a;--fg:#eee;--card:#1f2228;--l:#f0d9b5;--d:#b58863}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font:15px system-ui,sans-serif}
 .wrap{max-width:560px;margin:0 auto;padding:12px}
 header{display:flex;justify-content:space-between;align-items:center}
 h1{font-size:20px;margin:6px 0}
 .bar{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
-input,button{font:inherit;padding:8px 10px;border-radius:8px;border:1px solid #333;background:#2a2e36;color:var(--fg)}
+input,button,select{font:inherit;padding:8px 10px;border-radius:8px;border:1px solid #333;background:#2a2e36;color:var(--fg)}
 button{cursor:pointer}button:hover{background:#353a44}
 .card{background:var(--card);border-radius:10px;padding:10px;margin:10px 0}
-.st{margin:6px 0;font-weight:600}
+#turn{text-align:center;font-weight:800;padding:9px;border-radius:8px;margin:6px 0;background:#2a2e36}
+#turn.mine{background:#2e7d32;animation:pulse 1.2s infinite}
+#turn.theirs{background:#3a3f4b}#turn.end{background:#7a3fb0}
+@keyframes pulse{50%{box-shadow:0 0 0 4px rgba(46,125,50,.5)}}
+.tag{display:flex;justify-content:space-between;padding:5px 8px;opacity:.65;font-weight:600;border-radius:6px;transition:.2s}
+.tag.on{opacity:1;background:#3b3520;color:#ffd166}
+.tag b{font-variant-numeric:tabular-nums}.tag b.low{color:#ff6b6b}
 #bd{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));grid-template-rows:repeat(8,minmax(0,1fr));width:100%;aspect-ratio:1;border-radius:6px;overflow:hidden}
 .sq{aspect-ratio:1;min-width:0;line-height:1;display:flex;align-items:center;justify-content:center;font-size:min(9vw,50px);position:relative;user-select:none;cursor:pointer}
 .sq.l{background:var(--l)}.sq.d{background:var(--d)}
 .sq.lm{box-shadow:inset 0 0 0 100px rgba(255,220,0,.35)}
 .sq.sel{box-shadow:inset 0 0 0 100px rgba(0,160,255,.45)}
+.sq.chk{box-shadow:inset 0 0 22px 6px rgba(229,72,77,.85)}
 .sq.hint::after{content:"";width:28%;height:28%;border-radius:50%;background:rgba(0,0,0,.28);position:absolute}
+.sq span{position:relative;z-index:2}
 .w{color:#fff;text-shadow:0 0 2px #000,0 0 2px #000,0 0 3px #000}.b{color:#111}
 #chat{max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin-top:6px}
-.msg{background:#2d323b;padding:7px 10px;border-radius:14px 14px 14px 2px;max-width:92%}
+.msg{background:#2d323b;padding:7px 10px;border-radius:14px 14px 14px 2px;max-width:92%;animation:pop .25s}
+@keyframes pop{from{transform:scale(.8);opacity:0}}
+.dots{animation:bl 1s infinite;letter-spacing:2px}@keyframes bl{50%{opacity:.25}}
 .hrow{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #2d323b}
 #link input{width:100%;margin-bottom:6px}
 small{opacity:.6}
+.shake{animation:sh .45s}
+@keyframes sh{20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.cf{position:fixed;top:-30px;font-size:24px;z-index:20;animation:fall 2.4s linear forwards;pointer-events:none}
+@keyframes fall{to{transform:translateY(110vh) rotate(360deg)}}
 #gate{position:fixed;inset:0;z-index:10;background:radial-gradient(circle at 50% 30%,#3a1f4d,#14161a 70%);display:flex;align-items:center;justify-content:center;padding:16px;transition:opacity .4s}
 #gate.hide{opacity:0;pointer-events:none}
 .gbox{text-align:center;max-width:360px;width:100%}
@@ -35,106 +49,100 @@ small{opacity:.6}
 .gbox input{width:100%;text-align:center;font-size:18px;margin-bottom:8px}
 .gbox button{width:100%;background:#7a3fb0;font-weight:700}
 #gerr{color:#ff7b80;min-height:20px;font-size:13px}
-.sq span{position:relative;z-index:2}
-.sq.chk{box-shadow:inset 0 0 22px 6px rgba(229,72,77,.85)}
-.tag{display:flex;padding:4px 6px;opacity:.7;font-weight:600;transition:.2s}
-.tag.on{opacity:1;color:#ffd166}
-.shake{animation:sh .45s}
-@keyframes sh{20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
-.msg{animation:pop .25s}
-@keyframes pop{from{transform:scale(.8);opacity:0}}
-.dots{animation:bl 1s infinite;letter-spacing:2px}
-@keyframes bl{50%{opacity:.25}}
-.cf{position:fixed;top:-30px;font-size:24px;z-index:20;animation:fall 2.4s linear forwards;pointer-events:none}
-@keyframes fall{to{transform:translateY(110vh) rotate(360deg)}}
 </style>
 </head>
 <body>
 <div id="gate"><div class="gbox"><h1>👑 Roast Chess</h1><p>Goddess Prachi judges every move. Who dares enter?</p><input id="gname" placeholder="Your name" maxlength="16" autocomplete="off"><div id="gerr"></div><button id="go">Enter the arena</button></div></div>
 <div class="wrap">
-  <header><h1>♞ Roast Chess</h1><div id="rec"></div></header>
+  <header><h1>♞ Roast Chess</h1><div><small id="net"></small> <span id="rec"></span></div></header>
   <div class="bar">
-    <button id="mk">Create game link</button>
-    <button id="nw">Rematch</button>
-    <button id="rs">Resign</button>
+    <select id="tc"><option value="600">⏱ 10 min</option><option value="300">⏱ 5 min</option><option value="180">⏱ 3 min</option><option value="0">No timer</option></select>
+    <button id="mk">Create game link</button><button id="nw">Rematch</button><button id="rs">Resign</button>
   </div>
   <div id="link" class="card" hidden></div>
-  <div id="st" class="st"></div>
-  <div class="tag" id="tt"></div><div id="bd"></div><div class="tag" id="tb"></div>
+  <div id="turn"></div>
+  <div class="tag" id="tt"><span></span><b></b></div>
+  <div id="bd"></div>
+  <div class="tag" id="tb"><span></span><b></b></div>
   <div class="card"><b>👑 Goddess Prachi</b><div id="chat"></div></div>
   <div class="card">
     <b>Game history</b> <small>(saved in this browser)</small>
-    <div id="rp" hidden>
-      <div class="bar"><button onclick="step(-1)">◀</button><button onclick="step(1)">▶</button>
-      <button onclick="copyPgn()">Copy PGN</button><button onclick="exitRep()">Exit replay</button><span id="rpi"></span></div>
-    </div>
+    <div id="rp" hidden><div class="bar"><button onclick="step(-1)">◀</button><button onclick="step(1)">▶</button><button onclick="copyPgn()">Copy PGN</button><button onclick="exitRep()">Exit replay</button><span id="rpi"></span></div></div>
     <div id="hist"></div>
   </div>
 </div>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const V={p:1,n:3,b:3,r:5,q:9,k:0},G={p:'♟',n:'♞',b:'♝',r:'♜',q:'♛',k:'♚'};
+const G={p:'♟',n:'♞',b:'♝',r:'♜',q:'♛',k:'♚'};
 const empty=()=>({w:0,l:0,d:0,games:[]});
 function load(){try{return JSON.parse(localStorage.getItem('roastchess'))||empty()}catch(e){return empty()}}
 let S=load();
-function save(){try{localStorage.setItem('roastchess',JSON.stringify(S))}catch(e){}}
-let chess=new Chess(),myColor='w',conn=null,peer=null,host=false,oppName='Friend',sel=null,over=false,endMsg='',rep=null;
+const save=()=>{try{localStorage.setItem('roastchess',JSON.stringify(S))}catch(e){}};
+let chess=new Chess(),myColor='w',conn=null,peer=null,host=false,oppName='Friend',sel=null,over=false,endMsg='',rep=null,NAME='',anim=false,TC=0,clk={w:0,b:0},last=performance.now();
 const join=new URLSearchParams(location.search).get('join');
-let NAME='',anim=false;
 const myName=()=>NAME||'Player';
-try{$('gname').value=localStorage.getItem('rcname')||''}catch(e){}
-if(join)$('go').textContent='Join the game';
-function enter(){
-  const n=$('gname').value.trim();
-  if(n.length<2){$('gerr').textContent='A name, mortal. At least 2 characters.';return}
-  NAME=n;try{localStorage.setItem('rcname',n)}catch(e){}
-  $('gate').classList.add('hide');init();
-}
-$('go').onclick=enter;$('gname').onkeydown=e=>{if(e.key==='Enter')enter()};
 
+/* ---------- Goddess Prachi ---------- */
 const R={
- small:["{n}, you gave away a free pawn. Your goddess accepts tribute, but not like this.","How adorable, {n}. Did you think that was a plan?","Small mistake, {n}. Your goddess is keeping a list."],
- mid:["{n} hung a piece. Mortals do love making offerings.","A cat on the keyboard would please me more, {n}.","That piece had a family, {n}. I hope you're proud."],
- big:["{n}, you just threw away half your army. Bold for a mere mortal.","Is your hand okay, {n}? Or was that on purpose? Either way, tragic.","Even your pawns are embarrassed by you, {n}."],
- q:["{n} gave away the QUEEN. For nothing. Only one queen matters here, and it's me.","Queen gone. Dignity gone. Bow your head, {n}.","Historians will study this blunder, {n}. As a warning to others."],
- mate:["{n} walked into checkmate in one. Faster defeat than I expected, mortal.","You could've stopped that mate, {n}. You didn't. Magnificent.","Mate is coming, {n}. Even a goddess can't save you now."],
- miss:["{n} had checkmate on the board and missed it. Painful to witness.","Forced mate, right there, {n}. You looked at it and left.","The heavens sighed, {n}. That one was yours."],
- lose:["{n} lost. Bow before Goddess Prachi.","A defeat, {n}. Learn from it, mortal.","Resigned or mated, {n}, the result is the same: another L for your collection."]
+ mid:["{n}, you just handed over a piece like an offering. I accept, but I do not respect it.","A piece, hanging in the open. Did you lose your eyes or just your nerve, {n}?","I gave you sixty-four squares, {n}, and you chose that one.","The board is my temple, {n}. You just littered in it.","Even a pawn would have seen that coming, {n}."],
+ big:["{n}, that was not a move. That was a resignation letter written in pieces.","Half your army gone in one gesture. Truly the most generous mortal I have met.","I have watched empires fall more gracefully than that, {n}.","Blink twice, {n}, if someone else is playing your pieces."],
+ q:["THE QUEEN, {n}? Only one queen matters here, mortal, and you just insulted her.","Queen gone. Dignity gone. My patience, also gone.","If blundering were a sport, {n}, you would have just won gold. And still lost the game.","That queen carried you for ten moves and this is how you thank her?"],
+ mate:["{n} just walked into checkmate. I have never seen a mortal run so fast toward defeat.","There was a way out, {n}. You chose the trapdoor.","Checkmate is coming for you, {n}, and you held the door open."],
+ miss:["You had checkmate, {n}. It was RIGHT THERE. I am not angry, only eternally disappointed.","Forced mate on the board and you played something else. Fascinating, {n}.","The gods offered you victory and you said no thanks, {n}."]
 };
-const pick=(a,i)=>a[i%a.length];
+const li={};
+function pickR(k){const a=R[k];let i;do{i=Math.random()*a.length|0}while(a.length>1&&i===li[k]);li[k]=i;return a[i]}
 function bot(t){const d=document.createElement('div'),c=$('chat');d.className='msg';d.innerHTML='<i class="dots">•••</i>';c.appendChild(d);while(c.children.length>30)c.firstChild.remove();c.scrollTop=c.scrollHeight;setTimeout(()=>{d.textContent=t;c.scrollTop=c.scrollHeight},650)}
+function shake(){const b=$('bd');b.classList.remove('shake');void b.offsetWidth;b.classList.add('shake')}
 
-function mat(ch,c){let s=0;for(const x of ch.fen().split(' ')[0]){const v=V[x.toLowerCase()];if(v)s+=(x===x.toUpperCase()?1:-1)*v}return c==='w'?s:-s}
-function analyze(ch){
-  const c=ch.turn();
-  return ch.moves({verbose:true}).map(m=>{
-    ch.move(m);let v;
-    if(ch.in_checkmate())v=99;
-    else{
-      const opp=ch.moves();v=opp.length?99:0;
-      for(const o of opp){
-        ch.move(o);let w;
-        if(ch.in_checkmate())w=-99;
-        else{w=mat(ch,c);for(const r of ch.moves())if(r.includes('x')){ch.move(r);w=Math.max(w,mat(ch,c));ch.undo()}}
-        ch.undo();if(w<v)v=w;if(v<=-99)break;
-      }
-    }
-    ch.undo();return{m,v};
-  });
-}
-function roast(pre,mv,who,ply){
-  const vs=analyze(new Chess(pre));if(!vs.length)return;
-  const best=Math.max(...vs.map(x=>x.v));
-  const pl=vs.find(x=>x.m.from===mv.from&&x.m.to===mv.to&&(!x.m.promotion||x.m.promotion==='q'));if(!pl)return;
-  const v=pl.v,loss=best-v;let k=null;
-  if(best>=90&&v<90)k='miss';else if(v<=-90&&best>-90)k='mate';
-  else if(loss>=8)k='q';else if(loss>=4)k='big';else if(loss>=2)k='mid';else if(loss>=1)k='small';
-  if(k){bot(pick(R[k],ply).replace(/\{n\}/g,who));if(['q','big','mate','mid'].includes(k)){$('bd').classList.remove('shake');void $('bd').offsetWidth;$('bd').classList.add('shake')}}
-}
+/* move analysis runs in a background thread so the UI never freezes */
+const WSRC=`importScripts('https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js');
+const V={p:1,n:3,b:3,r:5,q:9,k:0};
+const g=m=>(m.captured?V[m.captured]:0)+(m.promotion?8:0);
+function qs(ch,sc,me,d){let res=sc;if(!d)return res;for(const m of ch.moves({verbose:true}))if(m.captured){ch.move(m);const v=qs(ch,sc+(me?1:-1)*g(m),!me,d-1);ch.undo();if(me?v>res:v<res)res=v}return res}
+function val(ch,m){ch.move(m);let v=0;const sc0=g(m),opp=ch.moves({verbose:true});
+ if(!opp.length)v=ch.in_check()?99:0;
+ else{v=99;for(const o of opp){ch.move(o);const sc1=sc0-g(o),rl=ch.moves({verbose:true});let w;
+  if(!rl.length)w=ch.in_check()?-99:0;
+  else{w=sc1;for(const r of rl)if(r.captured){ch.move(r);w=Math.max(w,qs(ch,sc1+g(r),false,3));ch.undo()}}
+  ch.undo();if(w<v)v=w;if(v<=-99)break}}
+ ch.undo();return v}
+onmessage=e=>{const{id,pre,mv}=e.data,ch=new Chess(pre);let best=-999,pv=null;
+ for(const m of ch.moves({verbose:true})){const v=val(ch,m);if(v>best)best=v;if(m.from===mv.from&&m.to===mv.to&&(!m.promotion||m.promotion==='q'))pv=v}
+ postMessage({id,best,pv})}`;
+let wk=null,wid=0;
+try{wk=new Worker(URL.createObjectURL(new Blob([WSRC],{type:'text/javascript'})));
+wk.onmessage=e=>{
+  const{id,best,pv}=e.data;if(id!==wid||pv==null)return;
+  const loss=best-pv;let k=null;
+  if(best>=90&&pv<90)k='miss';else if(pv<=-90&&best>-90)k='mate';else if(loss>=8)k='q';else if(loss>=5)k='big';else if(loss>=3)k='mid';
+  if(!k)return;
+  const x=pickR(k).replace(/\{n\}/g,myName());bot(x);shake();
+  if(conn&&conn.open)conn.send({t:'r',x});
+}}catch(e){wk=null}
 
+/* ---------- clocks ---------- */
+const fmt=ms=>{const s=Math.ceil(Math.max(0,ms)/1000);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+function showClk(){
+  const me=rep?rep.me:myColor,o=me==='w'?'b':'w',on=TC&&!rep;
+  $('tt').children[1].textContent=on?fmt(clk[o]):'';$('tb').children[1].textContent=on?fmt(clk[me]):'';
+  $('tt').children[1].className=on&&clk[o]<30000?'low':'';$('tb').children[1].className=on&&clk[me]<30000?'low':'';
+}
+function tick(){
+  const now=performance.now(),dt=now-last;last=now;
+  if(!TC||over||rep||!conn||!conn.open)return;
+  const t=chess.turn();clk[t]-=dt;showClk();
+  if(clk[t]<=0){
+    if(t===myColor){conn.send({t:'flag'});finish(myColor==='w'?'b':'w',' on time')}
+    else if(clk[t]<-2500)finish(myColor,' on time');
+  }
+}
+setInterval(tick,250);
+setInterval(()=>{if(conn&&conn.open)conn.send({t:'p',x:performance.now()})},3000);
+
+/* ---------- rendering ---------- */
 function render(){
   const ch=rep?rep.ch:chess,me=rep?rep.me:myColor,flip=me==='b';
   const b=ch.board(),h=ch.history({verbose:true}),lm=h[h.length-1];
@@ -150,11 +158,13 @@ function render(){
   $('bd').innerHTML=html;
   if(anim&&lm){slide(lm);anim=false}
   const live=!rep&&!over&&conn&&conn.open;
-  $('tt').textContent=`${rep?rep.opp:oppName} (${me==='w'?'Black':'White'})`;$('tb').textContent=`${rep?'You':myName()} (${me==='w'?'White':'Black'})`;
-  $('tt').className='tag'+(live&&chess.turn()!==myColor?' on':'');$('tb').className='tag'+(live&&chess.turn()===myColor?' on':'');
+  $('tt').children[0].textContent=`${rep?rep.opp:oppName} (${me==='w'?'Black':'White'})`;
+  $('tb').children[0].textContent=`${rep?'You':myName()} (${me==='w'?'White':'Black'})`;
+  $('tt').className='tag'+(live&&chess.turn()!==myColor?' on':'');
+  $('tb').className='tag'+(live&&chess.turn()===myColor?' on':'');
   $('rec').textContent=`🏆 ${S.w}W · ${S.l}L · ${S.d}D`;
   if(rep)$('rpi').textContent=`${rep.i}/${rep.hist.length}`;
-  status();
+  showClk();status();
 }
 function slide(lm){
   const a=document.querySelector(`[data-s=${lm.from}]`),b=document.querySelector(`[data-s=${lm.to}]`),p=b&&b.firstChild;if(!a||!p)return;
@@ -164,87 +174,93 @@ function slide(lm){
 }
 function confetti(){for(let i=0;i<40;i++){const e=document.createElement('span');e.className='cf';e.textContent=['🎉','✨','👑','♟'][i%4];e.style.left=Math.random()*100+'vw';e.style.animationDelay=Math.random()*.8+'s';document.body.appendChild(e);setTimeout(()=>e.remove(),3500)}}
 function status(m){
-  let t=m;
+  let t=m,cls='';
   if(!t){
     if(rep)t='Replaying a saved game';
-    else if(over)t=endMsg;
+    else if(over){t=endMsg;cls='end'}
     else if(!conn||!conn.open)t=join?'Connecting to your friend…':'Create a game link and send it to a friend';
-    else t=`${chess.turn()===myColor?'Your move':oppName+"'s move"} — you are ${myColor==='w'?'White':'Black'}${chess.in_check()?' · CHECK!':''}`;
+    else{const mine=chess.turn()===myColor;t=mine?`🟢 YOUR TURN (${myColor==='w'?'White':'Black'})${chess.in_check()?' — CHECK!':''}`:`⏳ ${oppName}'s turn`;cls=mine?'mine':'theirs'}
   }
-  $('st').textContent=t;
+  $('turn').textContent=t;$('turn').className=cls;
+  document.title=(!over&&!rep&&conn&&conn.open&&chess.turn()===myColor?'🟢 Your turn · ':'')+'Roast Chess';
 }
 function renderHist(){
   $('hist').innerHTML=S.games.length?'':'<small>No games yet.</small>';
   S.games.forEach((g,i)=>{
     const d=document.createElement('div');d.className='hrow';
-    const icon=g.res==='w'?'✅ Won':g.res==='l'?'❌ Lost':'🤝 Draw';
-    d.innerHTML=`<span>${icon} vs ${g.opp.replace(/</g,'&lt;')} <small>${new Date(g.d).toLocaleDateString()}</small></span>`;
-    const bt=document.createElement('button');bt.textContent='Replay';bt.onclick=()=>replay(i);d.appendChild(bt);
-    $('hist').appendChild(d);
+    d.innerHTML=`<span>${g.res==='w'?'✅ Won':g.res==='l'?'❌ Lost':'🤝 Draw'} vs ${String(g.opp).replace(/[&<>]/g,'')} <small>${new Date(g.d).toLocaleDateString()}</small></span>`;
+    const bt=document.createElement('button');bt.textContent='Replay';bt.onclick=()=>replay(i);d.appendChild(bt);$('hist').appendChild(d);
   });
 }
 
-function startGame(color,send){
-  chess=new Chess();myColor=color;over=false;sel=null;rep=null;$('rp').hidden=true;
-  if(send&&conn&&conn.open)conn.send({t:'new',c:color==='w'?'b':'w'});
+/* ---------- game flow ---------- */
+function startGame(color,send,tc){
+  if(tc!==undefined)TC=tc;
+  chess=new Chess();myColor=color;over=false;sel=null;rep=null;$('rp').hidden=true;clk={w:TC*1000,b:TC*1000};last=performance.now();
+  if(send&&conn&&conn.open)conn.send({t:'new',c:color==='w'?'b':'w',tc:TC});
   render();
 }
 function play(mv,mine){
-  const pre=chess.fen(),who=mine?myName():oppName;
-  if(!chess.move(mv))return;anim=true;
-  if(mine)conn.send({t:'m',from:mv.from,to:mv.to,promotion:mv.promotion});
-  const ply=chess.history().length;
-  if(chess.game_over()){
-    render();
-    finish(chess.in_checkmate()?(chess.turn()==='w'?'b':'w'):'d');
-  }else{render();setTimeout(()=>roast(pre,mv,who,ply),40)}
+  tick();
+  const pre=chess.fen(),X=chess.turn(),m={from:mv.from,to:mv.to,promotion:mv.promotion||'q'};
+  if(!chess.move(m))return;anim=true;
+  if(!mine&&typeof mv.ms==='number')clk[X]=mv.ms;
+  if(mine){conn.send({t:'m',from:m.from,to:m.to,promotion:m.promotion,ms:Math.max(0,clk[X])});if(wk)wk.postMessage({id:++wid,pre,mv:m})}
+  last=performance.now();render();
+  if(chess.game_over())finish(chess.in_checkmate()?X:'d');
 }
-function finish(winner){
+function finish(winner,how=''){
   if(over)return;over=true;
   const res=winner==='d'?'d':winner===myColor?'w':'l';
-  S[res]++;S.games.unshift({d:Date.now(),opp:oppName,me:myColor,res,pgn:chess.pgn()});save();
-  endMsg=res==='w'?'🏆 You won!':res==='l'?'💀 You lost.':'🤝 Draw.';
-  if(res==='l')bot(pick(R.lose,S.games.length).replace(/\{n\}/g,myName()));
-  else if(res==='w'){bot(`${oppName} has fallen. You may live, ${myName()}. For now.`);confetti()}
-  else bot('A draw. Nobody won, nobody is proud.');
+  S[res]++;S.games.unshift({d:Date.now(),opp:oppName,me:myColor,res,pgn:chess.pgn()});S.games.length=Math.min(S.games.length,100);save();
+  endMsg=(res==='w'?'🏆 You won':res==='l'?'💀 You lost':'🤝 Draw')+how+'.';
+  bot(res==='w'?`Victory to ${myName()}${how}. Enjoy it.`:res==='l'?`Defeat${how}, ${myName()}. Learn from it.`:'A draw. Neither of you impressed me.');
+  if(res==='w')confetti();
   renderHist();render();
 }
 $('bd').onclick=e=>{
   const el=e.target.closest('.sq');
   if(!el||rep||over||!conn||!conn.open||chess.turn()!==myColor)return;
   const s=el.dataset.s;
-  if(sel&&chess.moves({square:sel,verbose:true}).some(m=>m.to===s)){const mv={from:sel,to:s,promotion:'q'};sel=null;play(mv,true);return}
+  if(sel&&chess.moves({square:sel,verbose:true}).some(m=>m.to===s)){const mv={from:sel,to:s};sel=null;play(mv,true);return}
   const p=chess.get(s);sel=(p&&p.color===myColor)?s:null;render();
 };
 $('rs').onclick=()=>{if(over||rep||!conn||!conn.open)return;conn.send({t:'res'});finish(myColor==='w'?'b':'w')};
 $('nw').onclick=()=>{if(!conn||!conn.open)return;startGame(myColor==='w'?'b':'w',true)};
 
-function replay(i){
-  const g=S.games[i],r=new Chess();r.load_pgn(g.pgn);
-  rep={ch:new Chess(),hist:r.history(),i:0,me:g.me,opp:g.opp,pgn:g.pgn};$('rp').hidden=false;render();window.scrollTo(0,0);
-}
+/* ---------- replay ---------- */
+function replay(i){const g=S.games[i],r=new Chess();r.load_pgn(g.pgn);rep={ch:new Chess(),hist:r.history(),i:0,me:g.me,opp:g.opp,pgn:g.pgn};$('rp').hidden=false;render();window.scrollTo(0,0)}
 function step(d){rep.i=Math.max(0,Math.min(rep.hist.length,rep.i+d));rep.ch=new Chess();for(let k=0;k<rep.i;k++)rep.ch.move(rep.hist[k]);render()}
 function exitRep(){rep=null;$('rp').hidden=true;render()}
-function copyPgn(){navigator.clipboard&&navigator.clipboard.writeText(rep.pgn);bot('PGN copied. Paste it into lichess.org/paste to have a real engine judge you.')}
+function copyPgn(){navigator.clipboard&&navigator.clipboard.writeText(rep.pgn)}
 
+/* ---------- networking ---------- */
 function onData(d){
-  if(d.t==='hi'){oppName=d.name||'Friend';status()}
-  else if(d.t==='new')startGame(d.c,false);
+  if(d.t==='hi'){oppName=d.name||'Friend';render()}
+  else if(d.t==='new')startGame(d.c,false,d.tc);
+  else if(d.t==='sync'){chess=new Chess();chess.load_pgn(d.pgn);myColor=d.c;TC=d.tc;clk={w:d.w,b:d.b};over=false;sel=null;last=performance.now();render()}
   else if(d.t==='m'){if(!over&&chess.turn()!==myColor)play(d,false)}
   else if(d.t==='res')finish(myColor);
+  else if(d.t==='flag')finish(myColor,' on time');
+  else if(d.t==='r'){bot(d.x);shake()}
+  else if(d.t==='p')conn.send({t:'q',x:d.x});
+  else if(d.t==='q'){const r=Math.round(performance.now()-d.x),n=$('net');n.textContent='● '+r+'ms';n.style.color=r<150?'#4caf50':r<400?'#ffb300':'#ff5252'}
 }
 function setup(c){
   conn=c;
   c.on('open',()=>{
     c.send({t:'hi',name:myName()});$('link').hidden=true;
-    bot("Two mortals enter my arena. I'll be watching. And judging.");
-    if(host)startGame('w',true);else status();
+    if(host){
+      if(chess.history().length&&!over)c.send({t:'sync',pgn:chess.pgn(),c:myColor==='w'?'b':'w',tc:TC,w:clk.w,b:clk.b});
+      else{startGame('w',true,+$('tc').value);bot('Two mortals enter my arena. Play well.')}
+    }
+    render();
   });
   c.on('data',onData);
-  c.on('close',()=>status('Your friend disconnected.'));
+  c.on('close',()=>{if(conn===c)status('Your friend disconnected. If they reopen the link, the game resumes.')});
 }
 $('mk').onclick=()=>{
-  host=true;$('mk').disabled=true;status('Creating link…');
+  host=true;$('mk').disabled=true;$('tc').disabled=true;status('Creating link…');
   peer=new Peer();
   peer.on('open',id=>{
     const u=location.origin+location.pathname+'?join='+id;
@@ -254,12 +270,28 @@ $('mk').onclick=()=>{
     $('link').querySelector('button').onclick=()=>{inp.select();navigator.clipboard&&navigator.clipboard.writeText(u)};
     status('Waiting for your friend to open the link…');
   });
-  peer.on('connection',c=>{if(conn&&conn.open){c.close();return}setup(c)});
+  peer.on('connection',c=>{if(conn){try{conn.close()}catch(e){}}setup(c)});
   peer.on('error',e=>status('Connection error: '+e.type));
 };
+let tries=0;
+function dial(){
+  tries++;setup(peer.connect(join,{reliable:true}));
+  setTimeout(()=>{if(!(conn&&conn.open)){if(tries<3){status('Still connecting… retrying');dial()}else status('Could not connect. Ask your friend to keep their tab open, then refresh.')}},10000);
+}
+
+/* ---------- name gate ---------- */
+try{$('gname').value=localStorage.getItem('rcname')||''}catch(e){}
+if(join)$('go').textContent='Join the game';
+function enter(){
+  const n=$('gname').value.trim();
+  if(n.length<2){$('gerr').textContent='A name, mortal. At least 2 characters.';return}
+  NAME=n;try{localStorage.setItem('rcname',n)}catch(e){}
+  $('gate').classList.add('hide');init();
+}
+$('go').onclick=enter;$('gname').onkeydown=e=>{if(e.key==='Enter')enter()};
 function init(){
-  bot(`I am Goddess Prachi. Welcome, ${NAME}. Make a bad move and I will announce it to everyone.`);
-  if(join){$('mk').hidden=true;peer=new Peer();peer.on('open',()=>setup(peer.connect(join,{reliable:true})));peer.on('error',e=>status('Connection error: '+e.type+' (is the host tab still open?)'))}
+  bot(`I am Goddess Prachi. Welcome, ${NAME}. Play well and I will be kind. Blunder, and I will not.`);
+  if(join){$('mk').hidden=true;$('tc').hidden=true;peer=new Peer();peer.on('open',dial);peer.on('error',e=>status('Connection error: '+e.type))}
   render();
 }
 renderHist();render();
